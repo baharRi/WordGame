@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Game</title>
+<style>
+  body { font-family: sans-serif; background: #121213; color: #fff;
+         display: flex; flex-direction: column; align-items: center; margin: 2rem; }
+  #board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px; margin: 1rem 0; }
+  .row { display: grid; grid-template-columns: repeat(5, 3.5rem); gap: 6px; }
+  .tile { height: 3.5rem; border: 2px solid #3a3a3c; display: flex;
+          align-items: center; justify-content: center;
+          font-size: 1.8rem; font-weight: bold; text-transform: uppercase; }
+  .correct { background: #538d4e; border-color: #538d4e; }
+  .misplaced { background: #b59f3b; border-color: #b59f3b; }
+  .absent { background: #3a3a3c; border-color: #3a3a3c; }
+  input { font-size: 1.2rem; padding: .5rem; text-transform: uppercase; }
+  button { font-size: 1.2rem; padding: .5rem 1rem; }
+  #message { min-height: 1.5rem; margin-top: 1rem; }
+</style>
+</head>
+<body>
+  <h1>Word Game</h1>
+  <div id="board"></div>
+  <div>
+    <input id="guess" maxlength="5" autocomplete="off">
+    <button id="submit">Guess</button>
+  </div>
+  <div id="message">Loading words...</div>
+
+<script>
+  const MAX_TURNS = 6;
+  let wordBank = [];
+  let selectedWord = "";
+  let usedTurns = 0;
+  let gameOver = false;
+
+  const board = document.getElementById("board");
+  const input = document.getElementById("guess");
+  const message = document.getElementById("message");
+
+  //loads words.txt and fills word bank list
+  fetch("words.txt")
+    .then(response => response.text())
+    .then(text => {
+      wordBank = text
+        .split("\n")
+        .map(w => w.trim().toLowerCase())
+        .filter(w => w.length === 5);
+      selectedWord = wordBank[Math.floor(Math.random() * wordBank.length)];
+      message.textContent = "You have 6 turns to guess the word.";
+    })
+    .catch(() => {
+      message.textContent = "Couldn't load words.txt. Is the page served over http?";
+    });
+
+  //build the empty grid
+  for (let r = 0; r < MAX_TURNS; r++) {
+    const row = document.createElement("div");
+    row.className = "row";
+    for (let c = 0; c < 5; c++) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      row.appendChild(tile);
+    }
+    board.appendChild(row);
+  }
+
+  function submitGuess() {
+    if (gameOver) return;
+
+    if (!selectedWord) {
+      message.textContent = "Still loading words...";
+      return;
+    }
+
+    const guess = input.value.toLowerCase().trim();
+
+    if (guess.length !== 5 || !wordBank.includes(guess)) {
+      message.textContent = "Please enter a valid 5 letter word.";
+      return;
+    }
+
+    const tiles = board.children[usedTurns].children;
+    for (let i = 0; i < 5; i++) {
+      tiles[i].textContent = guess[i];
+      if (guess[i] === selectedWord[i]) tiles[i].classList.add("correct");
+      else if (selectedWord.includes(guess[i])) tiles[i].classList.add("misplaced");
+      else tiles[i].classList.add("absent");
+    }
+
+    usedTurns++;
+    input.value = "";
+    message.textContent = "";
+
+    //win condition
+    if (guess === selectedWord) {
+      message.textContent = "Congratulations! You guessed the word.";
+      gameOver = true;
+    } else if (usedTurns === MAX_TURNS) {
+      message.textContent = `The word was ${selectedWord}.`;
+      gameOver = true;
+    }
+  }
+
+  document.getElementById("submit").addEventListener("click", submitGuess);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") submitGuess(); });
+</script>
+</body>
+</html>
