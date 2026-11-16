@@ -30,9 +30,8 @@ while used_turns < MAX_TURNS:
         break
     if len(guess) == 5 and guess in word_bank:
         used_turns +=1
-        index = 0
-        for letter in guess:
-            if letter == selected_word[index]:
+        for i, letter in enumerate(guess):
+            if letter == selected_word[i]:
                 print(letter, end=' ')
             elif letter in selected_word:
                 print("_", end=' ')
@@ -40,7 +39,6 @@ while used_turns < MAX_TURNS:
             else: 
                 print("_", end=' ')
                 incorrect_letters.add(letter)
-            index +=1
         print(misplaced_letters)
 
         #win condition
